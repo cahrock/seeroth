@@ -8,8 +8,9 @@ on:
 
 jobs:
 
+  # ── Angular ────────────────────────────────────────────
   web:
-    name: Angular Build & Test
+    name: Angular Build & Lint
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -21,11 +22,14 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: seeroth-web/package-lock.json
-      - run: npm ci
-      - run: npm run lint
-      - run: npm test -- --watch=false
-      - run: npm run build -- --configuration production
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Build (production)
+        run: npm run build -- --configuration production
 
+  # ── Spring Boot ────────────────────────────────────────
   api:
     name: Spring Boot Build & Test
     runs-on: ubuntu-latest
@@ -39,8 +43,13 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: 'maven'
-      - run: ./mvnw verify
+      - name: Build & test
+        run: ./mvnw verify -Dspring.profiles.active=test
+        env:
+          JWT_SECRET: ci-test-secret-minimum-256-bits-placeholder
+          REDIS_URL: redis://localhost:6379/0
 
+  # ── FastAPI ────────────────────────────────────────────
   ai:
     name: FastAPI Lint & Test
     runs-on: ubuntu-latest
@@ -52,6 +61,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install -r requirements.txt
-      - run: ruff check .
-      - run: pytest tests/unit/ -v
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Lint (ruff)
+        run: ruff check .
+      - name: Test (pytest)
+        run: pytest tests/unit/ -v
+        env:
+          APP_ENV: test
+          ANTHROPIC_API_KEY: test-key
