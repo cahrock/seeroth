@@ -9,15 +9,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
+from app.api.v1.endpoints import macro, market
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup and shutdown lifecycle."""
-    # TODO: Initialize Redis connection pool
-    # TODO: Initialize DB engine
     yield
-    # TODO: Close connections on shutdown
+    from app.services.macro.fred_client import fred_client
+    await fred_client.close()
 
 
 app = FastAPI(
@@ -43,10 +42,20 @@ async def health_check():
     return {"status": "ok", "service": "seeroth-ai", "version": "1.0.0"}
 
 
-# ── Routers (registered as layers are built) ──────────────
-# from app.api.v1.endpoints import screening, advisory, zakat, decision, data_feed
+# ── L10 Data Feed Routers ──────────────────────────────────────
+app.include_router(
+    macro.router,
+    prefix="/api/v1/macro",
+    tags=["L10 Macro Data (FRED)"]
+)
+app.include_router(
+    market.router,
+    prefix="/api/v1/market",
+    tags=["L10 Market Data (Polygon.io)"]
+)
+
+# ── Coming soon ───────────────────────────────────────────────
 # app.include_router(screening.router, prefix="/api/v1/screening", tags=["L1-L3 Screening"])
-# app.include_router(advisory.router, prefix="/api/v1/advisory", tags=["L12 AI Advisory"])
-# app.include_router(zakat.router,    prefix="/api/v1/zakat",    tags=["L6 Zakat"])
-# app.include_router(decision.router, prefix="/api/v1/decision", tags=["L11 Decision Engine"])
-# app.include_router(data_feed.router,prefix="/api/v1/feed",     tags=["L10 Data Feed"])
+# app.include_router(advisory.router,  prefix="/api/v1/advisory",  tags=["L12 AI Advisory"])
+# app.include_router(zakat.router,     prefix="/api/v1/zakat",     tags=["L6 Zakat"])
+# app.include_router(decision.router,  prefix="/api/v1/decision",  tags=["L11 Decision Engine"])
