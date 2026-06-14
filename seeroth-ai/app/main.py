@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.api.v1.endpoints import macro, market
+from app.api.v1.endpoints import macro, market, fundamentals
 
 
 @asynccontextmanager
@@ -52,6 +52,11 @@ app.include_router(
     market.router,
     prefix="/api/v1/market",
     tags=["L10 Market Data (Polygon.io)"]
+)
+app.include_router(
+    fundamentals.router,
+    prefix="/api/v1/fundamentals",
+    tags=["L10 Fundamentals (FMP)"]
 )
 
 # ── Coming soon ───────────────────────────────────────────────
